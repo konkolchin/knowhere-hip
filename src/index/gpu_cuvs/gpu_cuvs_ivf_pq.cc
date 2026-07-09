@@ -15,20 +15,20 @@
  * limitations under the License.
  */
 
+#include "common/cuvs/integration/knowhere_gpu_device_count.hpp"
 #include <vector>
 
 #include "common/cuvs/proto/cuvs_index_kind.hpp"
 #include "gpu_cuvs.h"
 #include "knowhere/index/index_factory.h"
 #include "knowhere/index/index_node_thread_pool_wrapper.h"
-#include "raft/util/cuda_rt_essentials.hpp"
 
 namespace knowhere {
 KNOWHERE_REGISTER_GLOBAL_WITH_THREAD_POOL(GPU_CUVS_IVF_PQ, GpuCuvsIvfPqIndexNode, fp32,
                                           knowhere::feature::GPU_ANN_FLOAT_INDEX,
                                           []() {
                                               int count;
-                                              RAFT_CUDA_TRY(cudaGetDeviceCount(&count));
+                                              KNOWHERE_GPU_GET_DEVICE_COUNT(&count);
                                               return count * cuda_concurrent_size_per_device;
                                           }()
 
@@ -36,31 +36,31 @@ KNOWHERE_REGISTER_GLOBAL_WITH_THREAD_POOL(GPU_CUVS_IVF_PQ, GpuCuvsIvfPqIndexNode
 KNOWHERE_REGISTER_GLOBAL_WITH_THREAD_POOL(GPU_IVF_PQ, GpuCuvsIvfPqIndexNode, fp32,
                                           knowhere::feature::GPU_ANN_FLOAT_INDEX, []() {
                                               int count;
-                                              RAFT_CUDA_TRY(cudaGetDeviceCount(&count));
+                                              KNOWHERE_GPU_GET_DEVICE_COUNT(&count);
                                               return count * cuda_concurrent_size_per_device;
                                           }());
 KNOWHERE_REGISTER_GLOBAL_WITH_THREAD_POOL(GPU_CUVS_IVF_PQ, GpuCuvsIvfPqIndexNode, fp16,
                                           knowhere::feature::GPU | knowhere::feature::FP16, []() {
                                               int count;
-                                              RAFT_CUDA_TRY(cudaGetDeviceCount(&count));
+                                              KNOWHERE_GPU_GET_DEVICE_COUNT(&count);
                                               return count * cuda_concurrent_size_per_device;
                                           }());
 KNOWHERE_REGISTER_GLOBAL_WITH_THREAD_POOL(GPU_IVF_PQ, GpuCuvsIvfPqIndexNode, fp16,
                                           knowhere::feature::GPU | knowhere::feature::FP16, []() {
                                               int count;
-                                              RAFT_CUDA_TRY(cudaGetDeviceCount(&count));
+                                              KNOWHERE_GPU_GET_DEVICE_COUNT(&count);
                                               return count * cuda_concurrent_size_per_device;
                                           }());
 KNOWHERE_REGISTER_GLOBAL_WITH_THREAD_POOL(GPU_CUVS_IVF_PQ, GpuCuvsIvfPqIndexNode, int8,
                                           knowhere::feature::GPU | knowhere::feature::INT8, []() {
                                               int count;
-                                              RAFT_CUDA_TRY(cudaGetDeviceCount(&count));
+                                              KNOWHERE_GPU_GET_DEVICE_COUNT(&count);
                                               return count * cuda_concurrent_size_per_device;
                                           }());
 KNOWHERE_REGISTER_GLOBAL_WITH_THREAD_POOL(GPU_IVF_PQ, GpuCuvsIvfPqIndexNode, int8,
                                           knowhere::feature::GPU | knowhere::feature::INT8, []() {
                                               int count;
-                                              RAFT_CUDA_TRY(cudaGetDeviceCount(&count));
+                                              KNOWHERE_GPU_GET_DEVICE_COUNT(&count);
                                               return count * cuda_concurrent_size_per_device;
                                           }());
 }  // namespace knowhere

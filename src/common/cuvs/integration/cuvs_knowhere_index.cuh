@@ -15,6 +15,9 @@
  * limitations under the License.
  */
 #pragma once
+#ifdef KNOWHERE_WITH_HIP
+#include "common/cuvs/integration/cuda_compat.hpp"
+#endif
 #include <cmath>
 #include <cstdint>
 #include <cuvs/core/bitset.hpp>
@@ -585,7 +588,16 @@ struct cuvs_knowhere_index<IndexKind, DataType>::impl {
             auto scoped_device = raft::device_setter{device_id};
             auto const& res = get_device_resources_without_mempool();
             RAFT_EXPECTS(index_, "Index has not yet been trained");
+#if defined(KNOWHERE_WITH_HIP)
+            if constexpr (std::is_same_v<data_type, float> || std::is_same_v<data_type, int8_t> ||
+                          std::is_same_v<data_type, uint8_t>) {
+                cuvs_index_type::template serialize_to_hnswlib<data_type, indexing_type>(res, os, *index_);
+            } else {
+                RAFT_FAIL("CAGRA serialize_to_hnswlib is not supported for fp16 on HIP");
+            }
+#else
             cuvs_index_type::template serialize_to_hnswlib<data_type, indexing_type>(res, os, *index_);
+#endif
             raft::serialize_scalar(res, os, false);
         }
     }

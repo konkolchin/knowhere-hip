@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include "common/cuvs/integration/knowhere_gpu_device_count.hpp"
 #include <vector>
 
 #include "common/cuvs/proto/cuvs_index_kind.hpp"
@@ -24,7 +25,6 @@
 #include "knowhere/index/index_factory.h"
 #include "knowhere/index/index_node_thread_pool_wrapper.h"
 #include "raft/core/device_resources.hpp"
-#include "raft/util/cuda_rt_essentials.hpp"
 namespace knowhere {
 
 template <typename DataType>
@@ -168,51 +168,51 @@ class GpuCuvsCagraHybridIndexNode : public GpuCuvsCagraIndexNode<DataType> {
 KNOWHERE_REGISTER_GLOBAL_WITH_THREAD_POOL(GPU_CUVS_CAGRA, GpuCuvsCagraHybridIndexNode, fp32,
                                           knowhere::feature::GPU_ANN_FLOAT_INDEX, []() {
                                               int count;
-                                              RAFT_CUDA_TRY(cudaGetDeviceCount(&count));
+                                              KNOWHERE_GPU_GET_DEVICE_COUNT(&count);
                                               return count * cuda_concurrent_size_per_device;
                                           }());
 KNOWHERE_REGISTER_GLOBAL_WITH_THREAD_POOL(GPU_CAGRA, GpuCuvsCagraHybridIndexNode, fp32,
                                           knowhere::feature::GPU_ANN_FLOAT_INDEX, []() {
                                               int count;
-                                              RAFT_CUDA_TRY(cudaGetDeviceCount(&count));
+                                              KNOWHERE_GPU_GET_DEVICE_COUNT(&count);
                                               return count * cuda_concurrent_size_per_device;
                                           }());
 
 KNOWHERE_REGISTER_GLOBAL_WITH_THREAD_POOL(GPU_CUVS_CAGRA, GpuCuvsCagraHybridIndexNode, fp16,
                                           knowhere::feature::GPU | knowhere::feature::FP16, []() {
                                               int count;
-                                              RAFT_CUDA_TRY(cudaGetDeviceCount(&count));
+                                              KNOWHERE_GPU_GET_DEVICE_COUNT(&count);
                                               return count * cuda_concurrent_size_per_device;
                                           }());
 KNOWHERE_REGISTER_GLOBAL_WITH_THREAD_POOL(GPU_CAGRA, GpuCuvsCagraHybridIndexNode, fp16,
                                           knowhere::feature::GPU | knowhere::feature::FP16, []() {
                                               int count;
-                                              RAFT_CUDA_TRY(cudaGetDeviceCount(&count));
+                                              KNOWHERE_GPU_GET_DEVICE_COUNT(&count);
                                               return count * cuda_concurrent_size_per_device;
                                           }());
 // TODO: Add HNSW support for INT8. Not using the hybrid CAGRA+HNSW for INT8
 KNOWHERE_REGISTER_GLOBAL_WITH_THREAD_POOL(GPU_CUVS_CAGRA, GpuCuvsCagraIndexNode, int8,
                                           knowhere::feature::GPU | knowhere::feature::INT8, []() {
                                               int count;
-                                              RAFT_CUDA_TRY(cudaGetDeviceCount(&count));
+                                              KNOWHERE_GPU_GET_DEVICE_COUNT(&count);
                                               return count * cuda_concurrent_size_per_device;
                                           }());
 KNOWHERE_REGISTER_GLOBAL_WITH_THREAD_POOL(GPU_CAGRA, GpuCuvsCagraIndexNode, int8,
                                           knowhere::feature::GPU | knowhere::feature::INT8, []() {
                                               int count;
-                                              RAFT_CUDA_TRY(cudaGetDeviceCount(&count));
+                                              KNOWHERE_GPU_GET_DEVICE_COUNT(&count);
                                               return count * cuda_concurrent_size_per_device;
                                           }());
 KNOWHERE_REGISTER_GLOBAL_WITH_THREAD_POOL(GPU_CUVS_CAGRA, GpuCuvsCagraHybridIndexNode, bin1,
                                           knowhere::feature::GPU | knowhere::feature::BINARY, []() {
                                               int count;
-                                              RAFT_CUDA_TRY(cudaGetDeviceCount(&count));
+                                              KNOWHERE_GPU_GET_DEVICE_COUNT(&count);
                                               return count * cuda_concurrent_size_per_device;
                                           }());
 KNOWHERE_REGISTER_GLOBAL_WITH_THREAD_POOL(GPU_CAGRA, GpuCuvsCagraHybridIndexNode, bin1,
                                           knowhere::feature::GPU | knowhere::feature::BINARY, []() {
                                               int count;
-                                              RAFT_CUDA_TRY(cudaGetDeviceCount(&count));
+                                              KNOWHERE_GPU_GET_DEVICE_COUNT(&count);
                                               return count * cuda_concurrent_size_per_device;
                                           }());
 

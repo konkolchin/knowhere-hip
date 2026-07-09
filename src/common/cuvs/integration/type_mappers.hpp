@@ -15,13 +15,19 @@
  * limitations under the License.
  */
 #pragma once
-#include <cuda_fp16.h>
 
 #include <cstdint>
 #include <type_traits>
 
 #include "common/cuvs/proto/cuvs_index_kind.hpp"
 #include "knowhere/operands.h"
+
+
+#ifdef KNOWHERE_WITH_HIP
+#include <hip/hip_fp16.h>
+#else
+#include <cuda_fp16.h>
+#endif
 
 namespace cuvs_knowhere {
 
@@ -77,7 +83,7 @@ struct cuvs_data_type_mapper<knowhere::fp32> : std::true_type {
 };
 template <>
 struct cuvs_data_type_mapper<knowhere::fp16> : std::true_type {
-    using data_type = half;
+    using data_type = __half;
 };
 template <>
 struct cuvs_data_type_mapper<knowhere::int8> : std::true_type {

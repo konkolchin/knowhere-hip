@@ -15,7 +15,7 @@
 #include "simd/hook.h"
 
 #ifdef KNOWHERE_WITH_CUVS
-#include <cuda_runtime_api.h>
+#include "common/cuvs/integration/cuda_compat.hpp"
 #endif
 
 namespace knowhere {

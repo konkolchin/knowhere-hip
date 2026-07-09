@@ -25,7 +25,7 @@
 #endif
 #ifdef KNOWHERE_WITH_CUVS
 #include "common/cuvs/integration/raft_initialization.hpp"
-#include "cuda_runtime_api.h"
+#include "common/cuvs/integration/cuda_compat.hpp"
 #endif
 #include "simd/hook.h"
 

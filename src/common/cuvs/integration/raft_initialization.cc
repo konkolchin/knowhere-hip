@@ -16,7 +16,7 @@
  */
 #include "common/cuvs/integration/raft_initialization.hpp"
 
-#include <cuda_runtime_api.h>
+#include "common/cuvs/integration/cuda_compat.hpp"
 
 #include <cstddef>
 #include <raft/core/device_resources_manager.hpp>

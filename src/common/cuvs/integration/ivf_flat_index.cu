@@ -19,6 +19,8 @@
 
 namespace cuvs_knowhere {
 template struct cuvs_knowhere_index<cuvs_proto::cuvs_index_kind::ivf_flat, knowhere::fp32>;
+#ifndef KNOWHERE_WITH_HIP
 template struct cuvs_knowhere_index<cuvs_proto::cuvs_index_kind::ivf_flat, knowhere::fp16>;
+#endif
 template struct cuvs_knowhere_index<cuvs_proto::cuvs_index_kind::ivf_flat, knowhere::int8>;
 }  // namespace cuvs_knowhere

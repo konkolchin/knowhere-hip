@@ -52,3 +52,9 @@ target_link_libraries(knowhere_tests PRIVATE
         atomic
         stdc++fs
         knowhere)
+
+# HIP cuVS: link logger deps for UT (rmm logger.cpp may propagate via rmm targets).
+if(WITH_HIP AND WITH_CUVS)
+  include(${CMAKE_SOURCE_DIR}/cmake/libs/knowhere_hip_link.cmake)
+  knowhere_hip_link_ut_logger_deps(knowhere_tests)
+endif()

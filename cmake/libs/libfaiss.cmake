@@ -203,7 +203,7 @@ if(__X86_64)
             -Wno-unused-function
             -Wno-strict-aliasing>)
   target_link_libraries(
-    faiss PUBLIC OpenMP::OpenMP_CXX ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES}
+    faiss PUBLIC ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES}
                  faiss_avx2 faiss_avx512 knowhere_utils)
   target_compile_definitions(faiss PRIVATE FINTEGER=int)
 endif()
@@ -225,7 +225,7 @@ if(__AARCH64)
             -Wno-strict-aliasing>)
 
   add_dependencies(faiss knowhere_utils)
-  target_link_libraries(faiss PUBLIC OpenMP::OpenMP_CXX ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES}
+  target_link_libraries(faiss PUBLIC ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES}
                                      knowhere_utils)
   target_compile_definitions(faiss PRIVATE FINTEGER=int)
 endif()
@@ -252,7 +252,7 @@ if(__RISCV64)
             -Wno-strict-aliasing>)
 
   add_dependencies(faiss knowhere_utils)
-  target_link_libraries(faiss PUBLIC OpenMP::OpenMP_CXX ${BLAS_LIBRARIES}
+  target_link_libraries(faiss PUBLIC ${BLAS_LIBRARIES}
                                      ${LAPACK_LIBRARIES} knowhere_utils)
   target_compile_definitions(faiss PRIVATE FINTEGER=int)
 endif()
@@ -279,7 +279,11 @@ if(__PPC64)
             -Wno-strict-aliasing>)
 
   add_dependencies(faiss knowhere_utils)
-  target_link_libraries(faiss PUBLIC OpenMP::OpenMP_CXX ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES}
+  target_link_libraries(faiss PUBLIC ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES}
                                       knowhere_utils)
   target_compile_definitions(faiss PRIVATE FINTEGER=int)
+endif()
+
+if(TARGET faiss AND OpenMP_CXX_FLAGS)
+  target_compile_options(faiss PRIVATE ${OpenMP_CXX_FLAGS})
 endif()

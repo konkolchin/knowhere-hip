@@ -13,7 +13,41 @@
 # the License
 
 cmake_minimum_required(VERSION 3.26.4 FATAL_ERROR)
+
+# Early WITH_HIP before project(): Conan injects WITH_CUVS at project() time, so do
+# not read or default WITH_CUVS here. Auto-detect HIP from INSTALL_PREFIX env.
+if(NOT DEFINED WITH_HIP)
+  set(_knowhere_want_hip OFF)
+  if(DEFINED ENV{KNOWHERE_WITH_HIP} AND NOT "$ENV{KNOWHERE_WITH_HIP}" STREQUAL "0")
+    set(_knowhere_want_hip ON)
+  elseif(DEFINED ENV{INSTALL_PREFIX})
+    set(_knowhere_install_prefix "$ENV{INSTALL_PREFIX}")
+    if(_knowhere_install_prefix MATCHES "^~")
+      if(DEFINED ENV{HOME})
+        string(REPLACE "~" "$ENV{HOME}" _knowhere_install_prefix "${_knowhere_install_prefix}")
+      endif()
+    endif()
+    get_filename_component(_knowhere_install_prefix "${_knowhere_install_prefix}" ABSOLUTE)
+    if(EXISTS "${_knowhere_install_prefix}/lib/cmake/cuvs/cuvs-config.cmake")
+      set(_knowhere_want_hip ON)
+    endif()
+  endif()
+  set(WITH_HIP ${_knowhere_want_hip} CACHE BOOL
+      "Link prebuilt hipVS/hipRAFT (ROCm) instead of CUDA cuVS")
+  if(DEFINED _knowhere_install_prefix)
+    message(STATUS "KNOWHERE: INSTALL_PREFIX=${_knowhere_install_prefix} -> WITH_HIP=${WITH_HIP}")
+    unset(_knowhere_install_prefix)
+  else()
+    message(STATUS "KNOWHERE: WITH_HIP=${WITH_HIP}")
+  endif()
+  unset(_knowhere_want_hip)
+endif()
+if(WITH_HIP)
+  include(cmake/libs/libhipcuvs_preproject.cmake)
+endif()
+
 project(knowhere CXX C)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
 include(GNUInstallDirs)
@@ -23,7 +57,24 @@ include(cmake/utils/compile_flags.cmake)
 include(cmake/utils/platform_check.cmake)
 
 knowhere_option(WITH_CUVS "Build with CUVS indexes" OFF)
-if(WITH_CUVS)
+knowhere_option(WITH_HIP "Link prebuilt hipVS/hipRAFT (ROCm) instead of CUDA cuVS" OFF)
+message(STATUS "KNOWHERE: WITH_CUVS=${WITH_CUVS} WITH_HIP=${WITH_HIP}")
+if(WITH_HIP AND NOT WITH_CUVS)
+  message(FATAL_ERROR
+    "WITH_HIP=ON but WITH_CUVS=OFF. Re-run: conan install .. -o with_cuvs=True ; cmake -DWITH_CUVS=ON")
+endif()
+if(WITH_CUVS AND WITH_HIP)
+  include(cmake/libs/libhipcuvs.cmake)
+elseif(WITH_CUVS)
+  find_program(_knowhere_nvcc nvcc)
+  if(NOT _knowhere_nvcc)
+    message(FATAL_ERROR
+      "WITH_CUVS=ON but nvcc not found. For AMD ROCm / hipVS builds set\n"
+      "  export INSTALL_PREFIX=$HOME/rocmds_check_gfx1100/install\n"
+      "  cmake ... -DWITH_HIP=ON   (or export KNOWHERE_WITH_HIP=1)\n"
+      "See ann-harness-amd Layer 2 runbook.")
+  endif()
+  unset(_knowhere_nvcc)
   set(CMAKE_CUDA_ARCHITECTURES RAPIDS)
   include(cmake/libs/librapids.cmake)
   project(knowhere CXX C CUDA)
@@ -84,6 +135,9 @@ endif()
 
 include(cmake/utils/platform_check.cmake)
 include(cmake/utils/compile_flags.cmake)
+
+find_package(OpenMP REQUIRED)
+
 include(cmake/libs/libfaiss.cmake)
 include(cmake/libs/libhnsw.cmake)
 
@@ -91,8 +145,6 @@ include_directories(thirdparty/faiss)
 
 find_package(Boost REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
-
-find_package(OpenMP REQUIRED)
 
 find_package(folly REQUIRED)
 include_directories(${folly_INCLUDE_DIRS})
@@ -110,10 +162,10 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET
     "10.15"
     CACHE STRING "Minimum OS X deployment version" FORCE)
 
-if(OPENMP_FOUND)
+if(OpenMP_FOUND)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-  set(CMAKE_EXE_LINKER_FLAGS
-      "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+  set(CMAKE_SHARED_LINKER_FLAGS
+      "${CMAKE_SHARED_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
 
 if(WITH_COVERAGE)
@@ -173,6 +225,12 @@ if(NOT WITH_CUVS)
   knowhere_file_glob(GLOB_RECURSE KNOWHERE_CUVS_SRCS src/common/cuvs/*.cu
                      src/common/cuvs/*.cc src/index/gpu_cuvs/*.cc)
   list(REMOVE_ITEM KNOWHERE_SRCS ${KNOWHERE_CUVS_SRCS})
+elseif(WITH_HIP)
+  knowhere_file_glob(GLOB_RECURSE KNOWHERE_CUVS_CU_SRCS src/common/cuvs/*.cu)
+  if(KNOWHERE_CUVS_CU_SRCS)
+    list(REMOVE_ITEM KNOWHERE_SRCS ${KNOWHERE_CUVS_CU_SRCS})
+  endif()
+  unset(KNOWHERE_CUVS_CU_SRCS)
 endif()
 
 include_directories(src)
@@ -200,16 +258,31 @@ endif()
 add_library(knowhere SHARED ${KNOWHERE_SRCS})
 add_dependencies(knowhere ${KNOWHERE_LINKER_LIBS})
 if(WITH_CUVS)
-  list(
-    APPEND
-    KNOWHERE_LINKER_LIBS
-    raft::raft
-    cuvs::cuvs
-    CUDA::cublas
-    CUDA::cusparse
-    CUDA::cusolver)
+  if(NOT WITH_HIP)
+    list(
+      APPEND
+      KNOWHERE_LINKER_LIBS
+      raft::raft
+      cuvs::cuvs
+      CUDA::cublas
+      CUDA::cusparse
+      CUDA::cusolver)
+  endif()
 endif()
 target_link_libraries(knowhere PUBLIC ${KNOWHERE_LINKER_LIBS})
+if(WITH_CUVS AND WITH_HIP)
+  foreach(_hip_dep raft::raft cuvs::cuvs rmm::rmm)
+    get_target_property(_hip_inc ${_hip_dep} INTERFACE_INCLUDE_DIRECTORIES)
+    if(_hip_inc)
+      target_include_directories(knowhere PRIVATE ${_hip_inc})
+    endif()
+  endforeach()
+  target_link_libraries(knowhere PUBLIC raft::raft cuvs::cuvs rmm::rmm)
+  include(cmake/libs/knowhere_hip_link.cmake)
+  knowhere_hip_link_rmm(knowhere)
+endif()
+unset(_hip_dep)
+unset(_hip_inc)
 target_include_directories(knowhere PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 if(WITH_UT)
@@ -222,6 +295,10 @@ endif()
 
 if(WITH_FAISS_TESTS)
   add_subdirectory(tests/faiss)
+endif()
+
+if(WITH_CUVS AND WITH_HIP)
+  include(cmake/libs/knowhere_hip_host_fixup.cmake)
 endif()
 
 install(TARGETS knowhere
