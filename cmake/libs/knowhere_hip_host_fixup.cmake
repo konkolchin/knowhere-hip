@@ -90,7 +90,7 @@ if(TARGET knowhere AND _knowhere_fixup_rocm)
 
   # Single .cu TU: -fgpu-rdc + --hip-link deduplicates raft device templates once.
   set(_knowhere_cuvs_cu
-    "${CMAKE_SOURCE_DIR}/src/common/cuvs/integration/cuvs_knowhere_index_hip.cu")
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/common/cuvs/integration/cuvs_knowhere_index_hip.cu")
   if(_knowhere_cuvs_cu)
     add_library(knowhere_cuvs_hip STATIC ${_knowhere_cuvs_cu})
     set_source_files_properties(${_knowhere_cuvs_cu} PROPERTIES LANGUAGE CXX)
@@ -104,8 +104,8 @@ if(TARGET knowhere AND _knowhere_fixup_rocm)
       THRUST_HOST_SYSTEM=THRUST_HOST_SYSTEM_CPP
       _LIBCUDACXX_ALLOW_UNSUPPORTED_ARCHITECTURE)
     target_include_directories(knowhere_cuvs_hip PRIVATE
-      "${CMAKE_SOURCE_DIR}/src"
-      "${CMAKE_SOURCE_DIR}/include")
+      "${CMAKE_CURRENT_SOURCE_DIR}/src"
+      "${CMAKE_CURRENT_SOURCE_DIR}/include")
     if(EXISTS "${_knowhere_fixup_rocm}/include/hipcub")
       target_include_directories(knowhere_cuvs_hip SYSTEM PRIVATE
         "${_knowhere_fixup_rocm}/include/hipcub")
